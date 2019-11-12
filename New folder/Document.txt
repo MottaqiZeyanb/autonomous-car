@@ -1,0 +1,99 @@
+%------------------------------%
+%       Autonomous car         % %------------------------------%
+clc clear
+%------------------------------------%
+%               stage 1              %
+%------------------------------------%
+%-------------- 1 --------------%
+= [-3.785 -19.167 0 0
+     .469 -4.935 0 0
+1 0 0
+0 20 0];
+= [34.409; 27.686; 0; 0];
+= [0 0 0 1];D = 0;
+plant = ss(A, B, C, D);
+plant.InputName = {'delta_f'}; plant.OutputName = {'y'}; plant.StateName = {'v', 'r', 'theta', 'y'}; plant %-------------- 2 --------------%
+syms s plant_y = C/(s.*eye(4,4)-A)*B+D;
+%---- impulse response :
+figure(1) subplot(2, 1, 1)
+impulse(plant)
+title('impulse response of G\fontsize{8}(s)', 'fontsize', 10) ylabel('h(t)', 'fontsize', 12)
+%------- step response : subplot(2, 1, 2)
+step(plant)
+title('step response of G\fontsize{8}(s)', 'fontsize', 10) ylabel('s(t)', 'fontsize', 12)
+%-------------- 3 --------------% figure(2)
+grid on hold on
+plot([0 0],[-10 10], 'k', 'LineWidth', 2) plot([-10 2],[0 0], 'k', 'LineWidth', 2)
+axis([-10 2 -10 10]) %--------- Poles:
+Poles_real = real(pole(plant)); Poles_imag = imag(pole(plant));
+p = plot(Poles_real, Poles_imag, 'xr',...     'MarkerSize', 10, 'LineWidth', 2);
+title('Zero - Pole plot of G\fontsize{8}(s)', 'fontsize', 10) ylabel('Imag', 'fontsize', 12) xlabel('Real', 'fontsize', 12) %--------- Zeros:
+Zeros_real = real(zero(plant)); Zeros_imag = imag(zero(plant));
+plot(Zeros_real, Zeros_imag, 'ob',...      'MarkerSize', 10, 'LineWidth', 2)
+%------------------------------------%
+%              stage 2               %
+%------------------------------------%
+%-------------- 1 --------------%
+E = [-.2943 -.5803 -11.1133 -1.7986]; k4 = 1.7986;
+A2 = A + B * E;
+B2 = B * k4;
+C2 = C + D * E; D2 = D * k4;
+plant_cly = ss(A2, B2, C2, D2);
+plant_cly.InputName = {'y_{desired}'}; plant_cly.OutputName = {'y'}; plant_cly.StateName = {'v', 'r', 'theta', 'y'};
+fprintf('\n\n') plant_cly
+plant_y_cly = tf(plant_cly) %transfer function
+%-------------- 2 --------------%
+%--- impulse response :
+figure(3) subplot(2, 1, 1)
+impulse(plant_cly)
+title('impulse response of G\fontsize{8}cl', 'fontsize', 10) %-------------- 3 --------------%
+%------- step response : subplot(2, 1, 2)
+step(plant_cly)
+title('step response of G\fontsize{8}cl', 'fontsize', 10)
+%-------------- 5 --------------% figure(4) grid on hold on
+plot([0 0],[-20 20], 'k', 'LineWidth', 2) plot([-30 5],[0 0], 'k', 'LineWidth', 2)
+axis([-30 5 -10 10])
+%----------- Poles:
+Poles_real = real(pole(plant_cly)); Poles_imag = imag(pole(plant_cly));
+plot(Poles_real, Poles_imag, 'xr',...     'MarkerSize', 10, 'LineWidth', 2)
+%---------- zeros :
+Zeros_real = real(zero(plant_cly)); Zeros_imag = imag(zero(plant_cly));
+plot(Zeros_real, Zeros_imag, 'ob',...      'MarkerSize', 10, 'LineWidth', 2)
+title('Zero - Pole plot of G\fontsize{8}cl', 'fontsize', 10) ylabel( 'Imag', 'fontsize', 10 ) xlabel( 'Real', 'fontsize', 10 ) %-------------- 7 --------------%
+%-----%
+%  1  %
+%-----%
+E = [-.5048 -.4270 -19.2352 -2.4808];
+k4 = 2.4808;
+A2 = A + B * E;
+B2 = B * k4;
+C2 = C + D * E; D2 = D * k4;
+plant_cly1 = ss(A2, B2, C2, D2);
+plant_cly1.InputName = {'y_{desired}'}; plant_cly1.OutputName = {'y'}; plant_cly1.StateName = {'v', 'r', 'theta', 'y'};
+%-------- impulse response: figure(5) subplot(2, 1, 1)
+impulse(plant_cly1)
+title('impulse response of G\fontsize{10}cl\fontsize{6}1',...     'fontsize', 12)
+%------------ step response: figure(6) subplot(2, 1, 1)
+step(plant_cly1)
+title('step response of G\fontsize{10}cl\fontsize{6}1',...     'fontsize', 12)
+cly1_stepinfo = stepinfo(plant_cly1)
+%-----%
+%  2  %
+%-----%
+E = [-3.9795 2.9163 -113.5779 -22.3271]; k4 = 22.3271;
+A2 = A + B * E;
+B2 = B * k4;
+C2 = C + D * E; D2 = D * k4;
+plant_cly2 = ss(A2, B2, C2, D2);
+plant_cly2.InputName = {'y_{desired}'}; plant_cly2.OutputName = {'y'}; plant_cly2.StateName = {'v', 'r', 'theta', 'y'};
+%-------- impulse response: figure(5) subplot(2, 1, 2) impulse(plant_cly2)
+title('impulse response of G\fontsize{10}cl\fontsize{6}2',...     'fontsize', 12)
+%------------ step response: figure(6) subplot(2, 1, 2)
+step(plant_cly2)
+title('step response of G\fontsize{10}cl\fontsize{6}2',...     'fontsize', 12)
+cly2_stepinfo = stepinfo(plant_cly2)
+%------------------------------------%
+%               stage 3              % %------------------------------------%
+t = (0:.01:100); y_desired = .2 * sin(.1*t);
+figure (7)
+lsim(tf(plant_cly2), y_desired, t)
